@@ -1,0 +1,31 @@
+{
+  "name": "bulkload",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/server.ts",
+    "build": "tsoa routes && tsc",
+    "serve": "pm2 start build/src/server.js --name bulkload",
+    "logs": "pm2 logs bulkload"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@types/express": "^5.0.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@tsoa/cli": "^6.5.1",
+    "@types/node": "^24.10.1",
+    "tsoa": "^6.5.1"
+  }
+}
