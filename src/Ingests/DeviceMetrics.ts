@@ -1,4 +1,4 @@
-import * as ingestUtils from "./utils.js";
+import * as ingestUtils from "./utils";
 
 type deviceMetricColumns = "bytes_up" | "bytes_down" | "packets_up" | "packets_down" | 
   "signal";
