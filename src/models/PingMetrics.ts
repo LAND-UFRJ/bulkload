@@ -35,7 +35,7 @@ PingMetric.init(
     rtt3_us: { type: DataTypes.INTEGER, allowNull: true },
     rtt4_us: { type: DataTypes.INTEGER, allowNull: true },
     rtt5_us: { type: DataTypes.INTEGER, allowNull: true },
-    loss: { type: DataTypes.DOUBLE, allowNull: true },
+    loss: { type: DataTypes.INTEGER, allowNull: true },
   },
   {
     sequelize,
