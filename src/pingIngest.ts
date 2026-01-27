@@ -33,11 +33,11 @@ export async function ingestPing(input: any) {
         router_mac: data.mac,
         timestamp: ts,
         destination: data.dest,
-        rtt1_ms: data.lat1 ? parseFloat(data.lat1) : null,
-        rtt2_ms: data.lat2 ? parseFloat(data.lat2) : null,
-        rtt3_ms: data.lat3 ? parseFloat(data.lat3) : null,
-        rtt4_ms: data.lat4 ? parseFloat(data.lat4) : null,
-        rtt5_ms: data.lat5 ? parseFloat(data.lat5) : null,
+        rtt1_us: data.lat1 ? Math.round(parseFloat(data.lat1) * 1000) : null,
+        rtt2_us: data.lat2 ? Math.round(parseFloat(data.lat2) * 1000) : null,
+        rtt3_us: data.lat3 ? Math.round(parseFloat(data.lat3) * 1000) : null,
+        rtt4_us: data.lat4 ? Math.round(parseFloat(data.lat4) * 1000) : null,
+        rtt5_us: data.lat5 ? Math.round(parseFloat(data.lat5) * 1000) : null,
         loss: data.perda !== undefined ? parseInt(data.perda, 10) : 0,
       }, { transaction: t });
     }
