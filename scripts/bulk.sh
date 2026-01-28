@@ -9,14 +9,6 @@ fi
 DEVICE="$1"
 BASE_URL="http://nbi:7557/devices/${DEVICE}/tasks"
 
-# Clean up TPLINK
-json='{"name":"setParameterValues", "parameterValues": ['
-for i in $(seq 1 41); do
-  json+="[\"Device.BulkData.Profile.1.Parameter.${i}.Reference\", \"\", \"xsd:string\"], "
-done
-json+='["Device.BulkData.Profile.1.Parameter.42.Reference", "", "xsd:string"]]}'
-curl -i "$BASE_URL" -X POST --data "$json"
-
 # Define Server
 curl -i "$BASE_URL" -X POST --data '{"name":"setParameterValues", "parameterValues": [["Device.BulkData.Profile.1.HTTP.URL", "http://bulkdata.land.ufrj.br/bulkdata/tplink","xsd:string"], ["Device.BulkData.Profile.1.ReportingInterval", 60,"xsd:unsignedInt"], ["Device.BulkData.Profile.1.X_TP_CollectInterval", 60,"xsd:unsignedInt"]]}'
 
