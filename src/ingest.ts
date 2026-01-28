@@ -5,9 +5,11 @@ import { DeviceMetric } from "./models/DeviceMetrics";
 import { WanMetric } from "./models/WanMetrics";
 import { LanMetric } from "./models/LanMetrics";
 import { RouterMetric } from "./models/RouterMetrics";
+import { OpticMetric } from "./models/OpticMetrics";
 import { getIfaceMetrics } from "./Ingests/IfaceMetrics";
 import { getRouterMetrics } from "./Ingests/RouterMetrics";
 import { getDeviceMetrics } from "./Ingests/DeviceMetrics";
+import { getOpticMetrics } from "./Ingests/OpticMetrics";
 
 function epochSecondsToDate(s: string): Date {
   const n = Number(s);
@@ -66,6 +68,12 @@ async function upsertMetricsFromReport(report: any) {
     console.warn(`No Router metrics for MAC ${mac}`);
   }
 
+  let opticmetrics = null;
+  if(isXX530) {
+    // optical metrics is optional
+    opticmetrics = await getOpticMetrics(report, mac, ts);
+  }
+
   if (!wanmetrics && !routermetrics && !lanmetrics) {
     console.warn(`No metrics to ingest for MAC ${mac}`);
     return;
@@ -97,6 +105,8 @@ async function upsertMetricsFromReport(report: any) {
       await LanMetric.upsert(lanmetrics, { transaction: t });
     if (routermetrics)
       await RouterMetric.upsert(routermetrics, { transaction: t });
+    if (opticmetrics)
+      await OpticMetric.upsert(opticmetrics, { transaction: t });
   });
   const endTime = performance.now();
   const duration = (endTime - startTime).toFixed(2);
