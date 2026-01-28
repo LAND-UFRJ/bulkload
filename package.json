@@ -6,7 +6,7 @@
   "scripts": {
     "start": "ts-node src/server.ts",
     "build": "tsoa routes && tsc",
-    "serve": "pm2 start build/src/server.js --name bulkload",
+    "serve": "pm2 start build/src/server.js --name bulkload -i max",
     "logs": "pm2 logs bulkload"
   },
   "keywords": [],
