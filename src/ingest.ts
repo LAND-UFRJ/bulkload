@@ -49,7 +49,7 @@ async function upsertMetricsFromReport(report: any) {
   });
 
   // Extract Metrics
-  const isXX530 = (ModelName === "XX530vV2") ?  true : false;
+  const isXX530 = (ModelName === "XX530vV2" || ModelName === "XX530v") ?  true : false;
   const ifwan = (isXX530)? 5 : 4;
   const wanmetrics = await getIfaceMetrics(report, ifwan, true, mac, ts);
   if (!wanmetrics) {
