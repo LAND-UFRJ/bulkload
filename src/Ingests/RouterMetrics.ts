@@ -1,4 +1,4 @@
-import * as ingestUtils from "../Ingests/utils.js";
+import * as ingestUtils from "../Ingests/utils";
 
 type routerMetricColumns = "cpu_usage" | "memory" | "uptime";
 // TPLink router metric mapping
