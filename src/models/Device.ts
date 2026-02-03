@@ -9,6 +9,8 @@ export class Device extends Model {
   declare vendor?: string | null;
   declare vendor_class?: string | null;
   declare connection_type?: string | null;
+  declare device_type?: string | null;
+  declare os?: string | null;
 }
 
 Device.init(
@@ -44,6 +46,16 @@ Device.init(
       defaultValue: null,
     },
     connection_type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    device_type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    os: {
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null,

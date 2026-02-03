@@ -8,6 +8,7 @@ import { RouterMetric } from "./models/RouterMetrics";
 import { getIfaceMetrics } from "./Ingests/IfaceMetrics";
 import { getRouterMetrics } from "./Ingests/RouterMetrics";
 import { getDeviceMetrics } from "./Ingests/DeviceMetrics";
+import { enrichDeviceData } from "./deviceEnricher";
 
 function epochSecondsToDate(s: string): Date {
   const n = Number(s);
@@ -36,12 +37,16 @@ async function upsertMetricsFromReport(report: any) {
       if (host.IPAddress && host.IPAddress != "0")
         dev_ipaddr = host.IPAddress;
 
+      const enriched = enrichDeviceData(host.PhysAddress, host.HostName, host.VendorClassID);
+
       devices.push({
         device_mac: host.PhysAddress,
         router_mac: mac,
         host_name: host.HostName || null,
         ip_addr: dev_ipaddr,
-        vendor: null, // Not available in this report structure
+        vendor: enriched.vendor, 
+        device_type: enriched.device_type,
+        os: enriched.os,
         vendor_class: host.VendorClassID || null,
         connection_type: host.InterfaceType || null,
       });
