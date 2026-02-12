@@ -50,32 +50,40 @@ async function upsertMetricsFromReport(report: any) {
     }
   });
 
+  let showDebug = false;
   // Extract Metrics
   const isXX530 = (ModelName === "XX530vV2" || ModelName === "XX530v") ?  true : false;
   const ifwan = (isXX530)? 5 : 4;
   const wanmetrics = await getIfaceMetrics(report, ifwan, true, mac, ts);
   if (!wanmetrics) {
-    console.warn(`No WAN metrics for MAC ${mac}`);
+    console.warn(`No WAN metrics for MAC ${mac}: ${serialnumber}`);
+    showDebug = true;
   }
 
   const lanmetrics = await getIfaceMetrics(report, 1, false, mac, ts);
   if (!wanmetrics) {
-    console.warn(`No LAN metrics for MAC ${mac}`);
+    console.warn(`No LAN metrics for MAC ${mac}: ${serialnumber}`);
+    showDebug = true;
   }
   
   const routermetrics = await getRouterMetrics(report, mac, ts);
   if (!routermetrics) {
-    console.warn(`No Router metrics for MAC ${mac}`);
+    console.warn(`No Router metrics for MAC ${mac}: ${serialnumber}`);
+    showDebug = true;
   }
 
   let opticmetrics = null;
   if(isXX530) {
-    // optical metrics is optional
     opticmetrics = await getOpticMetrics(report, mac, ts);
+    if(!opticmetrics)
+      showDebug = true;
   }
 
   if (!wanmetrics && !routermetrics && !lanmetrics) {
-    console.warn(`No metrics to ingest for MAC ${mac}`);
+    console.warn(`No metrics to ingest for MAC ${mac}: ${serialnumber}`);
+    if (showDebug) {
+      console.warn("Report data:", JSON.stringify(report, null, 2));
+    }
     return;
   }
 
@@ -110,7 +118,10 @@ async function upsertMetricsFromReport(report: any) {
   });
   const endTime = performance.now();
   const duration = (endTime - startTime).toFixed(2);
-  console.log(`Success ${mac} at ${ts.toISOString()} (${duration} ms)`);
+  console.log(`Success ${mac} (${serialnumber}) at ${ts.toISOString()} (${duration} ms)`);
+  if (showDebug) {
+    console.warn("Report data:", JSON.stringify(report, null, 2));
+  }
 }
 
 export async function ingest(input: any) {
