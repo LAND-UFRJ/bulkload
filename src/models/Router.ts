@@ -6,6 +6,9 @@ export class Router extends Model {
   declare manufactorer?: string | null;
   declare serialnumber?: string | null;
   declare extractor_type: number;
+  declare user_ppp?: string | null;
+  declare isp?: string | null;
+  declare model?: string | null;
 }
 
 Router.init(
@@ -26,12 +29,17 @@ Router.init(
       defaultValue: null,
     },
     model: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: null,
     },
     user_ppp: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: null,
+    },
+    isp: {
+      type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: null,
     },
