@@ -26,6 +26,7 @@ async function upsertMetricsFromReport(report: any) {
   const manufacturer = report?.Device?.DeviceInfo?.Manufacturer || null;
   const serialnumber = report?.Device?.DeviceInfo?.SerialNumber || null;
   const ModelName = report?.Device?.DeviceInfo?.ModelName || null;
+  const user_ppp = report?.Device?.PPP?.Interface?.[2]?.Username || null;
   
   const ts = epochSecondsToDate(report?.CollectionTime);
 
@@ -93,6 +94,8 @@ async function upsertMetricsFromReport(report: any) {
         mac_address: mac,
         manufacturer: manufacturer,
         serialnumber: serialnumber,
+        model: ModelName,
+        user_ppp: user_ppp,
         extractor_type: 0, // bulkdata  
       },
       { transaction: t }

@@ -25,6 +25,16 @@ Router.init(
       allowNull: true,
       defaultValue: null,
     },
+    model: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    user_ppp: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
     extractor_type: {
       type: DataTypes.INTEGER,
       allowNull: false,
