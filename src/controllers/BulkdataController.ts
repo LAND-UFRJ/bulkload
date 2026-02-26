@@ -11,7 +11,7 @@ export class BulkdataController extends Controller {
       await ingest(requestBody);
       this.setStatus(200);
     } catch (e: any) {
-      console.error(e);
+      console.error("ERROR: ${e}\nJSON: ${requestBody}");
       this.setStatus(500);
     }
   }
