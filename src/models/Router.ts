@@ -3,11 +3,10 @@ import { sequelize } from "../db";
 
 export class Router extends Model {
   declare mac_address: string;
-  declare manufactorer?: string | null;
+  declare manufacturer?: string | null;
   declare serialnumber?: string | null;
   declare extractor_type: number;
   declare user_ppp?: string | null;
-  declare isp?: string | null;
   declare model?: string | null;
 }
 
@@ -29,17 +28,12 @@ Router.init(
       defaultValue: null,
     },
     model: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null,
     },
     user_ppp: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      defaultValue: null,
-    },
-    isp: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null,
     },

@@ -27,10 +27,10 @@ dotenv.config(); // Must be called before any import that uses process.env
 import * as fs from "fs";
 import * as path from "path";
 import { Op, fn, col } from "sequelize";
-import { shutdownDB } from "./db";
-import { Router } from "./models/Router";
-import { RouterMetric } from "./models/RouterMetrics";
-import { Geolocation } from "./models/Geolocation";
+import { shutdownDB } from "../src/db";
+import { Router } from "../src/models/Router";
+import { RouterMetric } from "../src/models/RouterMetrics";
+import { Geolocation } from "../src/models/Geolocation";
 
 const CSV_IMPORT_DIR = path.resolve(process.cwd(), "csv-import");
 
@@ -69,7 +69,13 @@ function parseCsv(filePath: string): GeoRow[] {
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
       if (ch === '"') {
-        inQuotes = !inQuotes;
+        // Handle escaped quotes inside a quoted field per RFC 4180: "" -> "
+        if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++; // Skip the second quote
+        } else {
+          inQuotes = !inQuotes;
+        }
       } else if (ch === sep && !inQuotes) {
         fields.push(current);
         current = "";
@@ -229,10 +235,24 @@ async function ingestGeolocation(csvPath: string) {
   // -------------------------------------------------------------------------
   const allMacs = [...new Set(stampedRows.map((r) => r.row.mac))];
   console.log(`[DEBUG] dedup check for ${allMacs.length} macs...`);
-  const existing = await Geolocation.findAll({
-    attributes: ["router_mac", "timestamp"],
-    where: { router_mac: { [Op.in]: allMacs } },
-  });
+  let existing: any[] = [];
+  if (stampedRows.length && allMacs.length) {
+    const timestamps = stampedRows.map((r) => r.ts);
+    const minTs = new Date(Math.min(...timestamps.map((t) => t.getTime())));
+    const maxTs = new Date(Math.max(...timestamps.map((t) => t.getTime())));
+    console.log(
+      `[DEBUG] dedup timestamp window: ${minTs.toISOString()} - ${maxTs.toISOString()}`
+    );
+    existing = await Geolocation.findAll({
+      attributes: ["router_mac", "timestamp"],
+      where: {
+        router_mac: { [Op.in]: allMacs },
+        timestamp: {
+          [Op.between]: [minTs, maxTs],
+        },
+      },
+    });
+  }
 
   const dedupKey = (mac: string, ts: Date) =>
     `${mac}|${ts.toISOString()}`;
