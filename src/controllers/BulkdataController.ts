@@ -14,7 +14,7 @@ export class BulkdataController extends Controller {
       });
       this.setStatus(202);
     } catch (e: any) {
-      console.error("Erro ao enfileirar dados:", e.message);
+      console.error(`ERROR: ${e}\nJSON: ${JSON.stringify(requestBody)}`);
       this.setStatus(500);
     }
   }
