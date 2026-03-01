@@ -8,7 +8,7 @@
     "build": "tsoa routes && tsc",
     "serve": "pm2 start build/src/server.js --name bulkload -i max",
     "worker": "ts-node src/worker.ts",
-    "serve:worker": "pm2 start build/src/worker.js --name bulkload-worker",
+    "serve:worker": "pm2 start build/src/worker.js --name bulkload-worker -i max",
     "logs": "pm2 logs bulkload",
     "geolocation": "ts-node scripts/geolocationIngest.ts"
   },
