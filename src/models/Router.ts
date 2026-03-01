@@ -3,9 +3,11 @@ import { sequelize } from "../db";
 
 export class Router extends Model {
   declare mac_address: string;
-  declare manufactorer?: string | null;
+  declare manufacturer?: string | null;
   declare serialnumber?: string | null;
   declare extractor_type: number;
+  declare user_ppp?: string | null;
+  declare model?: string | null;
 }
 
 Router.init(

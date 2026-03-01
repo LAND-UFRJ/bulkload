@@ -1,17 +1,20 @@
-import { Body, Controller, Post, Route } from 'tsoa';
-import { ingest } from "../ingest";
-//const fs = require('fs');
+import { Body, Controller, Post, Route, SuccessResponse, Response } from 'tsoa';
+import { ingestionQueue } from "../queue";
 
 @Route('bulkdata')
 export class BulkdataController extends Controller {
+  @SuccessResponse("202", "Accepted for processing")
+  @Response("500", "Internal Server Error")
   @Post('/tplink')
   public async receiveJson(@Body() requestBody: any): Promise<void> {
     try {
-      //fs.appendFileSync('requestBody.json', JSON.stringify(requestBody, null, 2) + '\n');
-      await ingest(requestBody);
-      this.setStatus(200);
+      await ingestionQueue.add('process-tplink', requestBody, {
+        attempts: 3,
+        backoff: 1000,
+      });
+      this.setStatus(202);
     } catch (e: any) {
-      console.error("ERROR: ${e}\nJSON: ${requestBody}");
+      console.error(`ERROR: ${e}\nJSON: ${JSON.stringify(requestBody)}`);
       this.setStatus(500);
     }
   }
