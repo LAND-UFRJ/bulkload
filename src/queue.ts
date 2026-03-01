@@ -7,8 +7,16 @@ const redisConnection = {
 
 export const ingestionQueue = new Queue('ingestion-queue', {
   connection: redisConnection,
+  defaultJobOptions: {
+    removeOnComplete: { count: 3000 },
+    removeOnFail: { count: 3000 },
+  },
 });
 
 export const pingQueue = new Queue('ping-queue', {
   connection: redisConnection,
+  defaultJobOptions: {
+    removeOnComplete: { count: 1000 },
+    removeOnFail: { count: 1000 },
+  },
 });

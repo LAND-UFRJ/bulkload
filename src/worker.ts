@@ -24,27 +24,27 @@ const redisConnection = {
 
 // ── Bulkdata ingestion worker ──────────────────────────────────────────────
 const ingestionWorker = new Worker('ingestion-queue', async (job) => {
-  console.log(`[Worker] Processando ingestion job ${job.id}...`);
+//  console.log(`[Worker] Processando ingestion job ${job.id}...`);
   await ingest(job.data);
 }, {
   connection: redisConnection,
-  concurrency: 5, // process up to 5 jobs simultaneously
+  concurrency: 3, // process up to 3 jobs simultaneously
 });
 
-ingestionWorker.on('completed', (job) =>
-  console.log(`[Worker] Ingestion job ${job.id} finalizado!`)
-);
+//ingestionWorker.on('completed', (job) =>
+//  console.log(`[Worker] Ingestion job ${job.id} finalizado!`)
+//);
 ingestionWorker.on('failed', (job, err) =>
   console.error(`[Worker] Ingestion job ${job?.id} falhou:`, err.message)
 );
 
 // ── Ping ingestion worker ──────────────────────────────────────────────────
 const pingWorker = new Worker('ping-queue', async (job) => {
-  console.log(`[Worker] Processando ping job ${job.id}...`);
+//  console.log(`[Worker] Processando ping job ${job.id}...`);
   await ingestPing(job.data);
 }, {
   connection: redisConnection,
-  concurrency: 5,
+  concurrency: 3,
 });
 
 pingWorker.on('completed', (job) =>
