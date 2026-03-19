@@ -22,31 +22,46 @@ function normalizeMac(mac: unknown): string {
   return mac.trim().toLowerCase().replace(/-/g, ":");
 }
 
-function findDeviceByMac(report: any, targetMac: string): any | null {
+function findDeviceByMacGeneric(report: any, targetMac: string): any | null {
   const target = normalizeMac(targetMac);
   if (!target) return null;
 
-  // New tree only
-  const roots = [
-    report?.Device?.AccessPoint || {},
-    report?.Device?.WiFi?.AccessPoint || {},
-  ];
+  const wifi = report?.Device?.WiFi?.MultiAP?.APDevice || {};
 
-  for (const root of roots) {
-    for (const ap of Object.values(root)) {
+  for (const radio of Object.values(wifi)) {
+    const radioObj = radio as any;
+    for (const ap of Object.values(radioObj?.Radio || {})) {
       const apObj = ap as any;
-      for (const device of Object.values(apObj?.AssociatedDevice || {})) {
-        const d = device as any;
-        const mac = normalizeMac(d?.MACAddress);
-
-        // Case-insensitive MAC comparison
-        if (mac !== target) continue;
-
-        // Keep only active clients
-        if (String(d?.Active) !== "1") continue;
-
-        return d;
+      for (const apDevice of Object.values(apObj?.AP || {})) {
+        const apDeviceObj = apDevice as any;
+        for (const device of Object.values(apDeviceObj?.AssociatedDevice || {})) {
+          const d = device as any;
+          const mac = normalizeMac(d?.MACAddress);
+          if (mac !== target) continue;
+          if (String(d?.Active) !== "1") continue;
+          return d;
+        }
       }
+    }
+  }
+
+  return null;
+}
+
+function findDeviceByMacXX530(report: any, targetMac: string): any | null {
+  const target = normalizeMac(targetMac);
+  if (!target) return null;
+
+  const root = report?.Device?.WiFi?.AccessPoint || {};
+
+  for (const ap of Object.values(root)) {
+    const apObj = ap as any;
+    for (const device of Object.values(apObj?.AssociatedDevice || {})) {
+      const d = device as any;
+      const mac = normalizeMac(d?.MACAddress);
+      if (mac !== target) continue;
+      if (String(d?.Active) !== "1") continue;
+      return d;
     }
   }
 
@@ -57,9 +72,12 @@ export async function getDeviceMetrics(
   report: any,
   hostDeviceMac: string,
   routerMac: string,
-  ts: Date
+  ts: Date,
+  isXX530: boolean = false
 ): Promise<any | null> {
-  const device = findDeviceByMac(report, hostDeviceMac);
+  const device = isXX530
+    ? findDeviceByMacXX530(report, hostDeviceMac)
+    : findDeviceByMacGeneric(report, hostDeviceMac);
   if (!device) return null;
 
   const row: Partial<Record<deviceMetricColumns, number | null>> = {};

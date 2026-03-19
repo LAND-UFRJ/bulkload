@@ -93,7 +93,8 @@ async function upsertMetricsFromReport(report: any) {
       {
         mac_address: mac,
         manufacturer: manufacturer,
-        serialnumber: serialnumber,
+        serialnumber: serialnumber,  // Extract Metrics
+
         model: ModelName,
         user_ppp: user_ppp,
         extractor_type: 0, // bulkdata  
@@ -104,7 +105,7 @@ async function upsertMetricsFromReport(report: any) {
     // Upsert all devices and their metrics
     for (const device of devices) {
       await Device.upsert(device, { transaction: t });
-      const deviceMetrics = await getDeviceMetrics(report, device.device_mac, mac, ts);
+      const deviceMetrics = await getDeviceMetrics(report, device.device_mac, mac, ts, isXX530);
       if (deviceMetrics) {
         await DeviceMetric.upsert(deviceMetrics, { transaction: t });
       }
