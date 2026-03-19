@@ -55,11 +55,11 @@ function findDeviceByMac(report: any, targetMac: string): any | null {
 
 export async function getDeviceMetrics(
   report: any,
-  deviceMac: string,
+  hostDeviceMac: string,
   routerMac: string,
   ts: Date
 ): Promise<any | null> {
-  const device = findDeviceByMac(report, deviceMac);
+  const device = findDeviceByMac(report, hostDeviceMac);
   if (!device) return null;
 
   const row: Partial<Record<deviceMetricColumns, number | null>> = {};
@@ -72,12 +72,13 @@ export async function getDeviceMetrics(
     (c) => row[c] != null
   );
   if (!hasMetric) {
-    console.warn(`No metrics for device ${deviceMac}`);
+    console.warn(`No metrics for device ${hostDeviceMac}`);
     return null;
   }
 
   const payload: any = {
-    device_mac: deviceMac,
+    // Keep the exact MAC format from Hosts as source of truth.
+    device_mac: hostDeviceMac,
     router_mac: routerMac,
     timestamp: ts,
   };
