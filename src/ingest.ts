@@ -122,7 +122,7 @@ async function upsertMetricsFromReport(report: any) {
   });
   const endTime = performance.now();
   const duration = (endTime - startTime).toFixed(2);
-  console.log(`Success ${mac} (${serialnumber}) at ${ts.toISOString()} (${duration} ms)`);
+  //console.log(`Success ${mac} (${serialnumber}) at ${ts.toISOString()} (${duration} ms)`);
   if (showDebug) {
     console.warn("Report data:", JSON.stringify(report, null, 2));
   }
