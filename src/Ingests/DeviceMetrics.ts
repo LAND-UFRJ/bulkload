@@ -113,8 +113,8 @@ function findDevice(report: any, targetMac: string, isXX530: boolean): DeviceLoo
   }
 
   // XX530: try AccessPoint first (full metrics)
-  const apDevice = findDeviceByMacXX530(report, targetMac);
-  if (apDevice) return { device: apDevice, source: "access_point" };
+  const accessPointDevice = findDeviceByMacXX530(report, targetMac);
+  if (accessPointDevice) return { device: accessPointDevice, source: "access_point" };
 
   // Fallback: APDevice tree (packets + raw signal, no bytes)
   const fallback = findDeviceByMacGeneric(report, targetMac);
