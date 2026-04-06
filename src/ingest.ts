@@ -27,7 +27,7 @@ async function upsertMetricsFromReport(report: any) {
   const serialnumber = report?.Device?.DeviceInfo?.SerialNumber || null;
   const ModelName = report?.Device?.DeviceInfo?.ModelName || null;
   const user_ppp = report?.Device?.PPP?.Interface?.[2]?.Username || null;
-  
+
   const ts = epochSecondsToDate(report?.CollectionTime);
 
   // Extract devices from Hosts
@@ -66,7 +66,7 @@ async function upsertMetricsFromReport(report: any) {
     console.warn(`No LAN metrics for MAC ${mac}: ${serialnumber}`);
     showDebug = true;
   }
-  
+
   const routermetrics = await getRouterMetrics(report, mac, ts);
   if (!routermetrics) {
     console.warn(`No Router metrics for MAC ${mac}: ${serialnumber}`);
@@ -97,7 +97,7 @@ async function upsertMetricsFromReport(report: any) {
 
         model: ModelName,
         user_ppp: user_ppp,
-        extractor_type: 0, // bulkdata  
+        extractor_type: 0, // bulkdata
       },
       { transaction: t }
     );
