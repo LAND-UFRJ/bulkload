@@ -1,6 +1,6 @@
 import * as ingestUtils from "./utils";
 
-type ifaceMetricColumns = "bytes_up" | "bytes_down" | "packets_up" | "packets_down" | 
+type ifaceMetricColumns = "bytes_up" | "bytes_down" | "packets_up" | "packets_down" |
   "errors_up" | "errors_down" | "uptime";
 // TPLink iface metric mapping
 export const IFACEMETRICS_MAP: Record<ifaceMetricColumns, string> = {

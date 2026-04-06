@@ -14,18 +14,18 @@ export async function ingestPing(input: any) {
   }
 
   const pings = Object.values(input);
-  
+
   await sequelize.transaction(async (t) => {
     for (const data of pings as any[]) {
       if (!data.mac || !data.timestamp || !data.dest) continue;
 
       const ts = epochSecondsToDate(data.timestamp);
-      
+
       await Router.upsert(
-        { 
-          mac_address: data.mac, 
-          extractor_type: 2 
-        }, 
+        {
+          mac_address: data.mac,
+          extractor_type: 2
+        },
         { transaction: t }
       );
 

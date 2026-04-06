@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Route, SuccessResponse, Response } from 'tsoa';
+import { Body, Controller, Post, Route, SuccessResponse, Response } from "tsoa";
 import { pingQueue } from "../queue";
 
 @Route('ping')
