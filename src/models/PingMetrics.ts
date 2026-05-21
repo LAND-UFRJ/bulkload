@@ -1,46 +1,35 @@
-import { DataTypes, Model } from "sequelize";
-import { sequelize } from "../db";
+import { Sender } from "@questdb/nodejs-client";
 
-export class PingMetric extends Model {
-  declare router_mac: string;
-  declare timestamp: Date;
-  declare destination: string;
-  declare rtt1_us: number | null;
-  declare rtt2_us: number | null;
-  declare rtt3_us: number | null;
-  declare rtt4_us: number | null;
-  declare rtt5_us: number | null;
-  declare loss: number | null;
+export interface IPingMetric {
+  router_mac: string;
+  timestamp?: Date;
+  destination: string;
+  rtt1_us?: number | null;
+  rtt2_us?: number | null;
+  rtt3_us?: number | null;
+  rtt4_us?: number | null;
+  rtt5_us?: number | null;
+  loss?: number | null;
 }
 
-PingMetric.init(
-  {
-    router_mac: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      primaryKey: true,
-      references: { model: "routers", key: "mac_address" },
-    },
-    timestamp: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      primaryKey: true,
-    },
-    destination: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    rtt1_us: { type: DataTypes.INTEGER, allowNull: true },
-    rtt2_us: { type: DataTypes.INTEGER, allowNull: true },
-    rtt3_us: { type: DataTypes.INTEGER, allowNull: true },
-    rtt4_us: { type: DataTypes.INTEGER, allowNull: true },
-    rtt5_us: { type: DataTypes.INTEGER, allowNull: true },
-    loss: { type: DataTypes.INTEGER, allowNull: true },
-  },
-  {
-    sequelize,
-    tableName: "ping_metrics",
-    schema: "monitoramento",
-    timestamps: false,
-  }
-);
+export function appendPingToBuffer(sender: Sender, router: IPingMetric) {
+  sender.table("ping_metrics")
+    .symbol("router_mac", router.router_mac)
+    .symbol("destination", router.destination);
+
+  if(router.rtt1_us !== undefined && router.rtt1_us !== null)
+    sender.intColumn("rtt1_us", router.rtt1_us)
+  if(router.rtt2_us !== undefined && router.rtt2_us !== null)
+    sender.intColumn("rtt2_us", router.rtt2_us)
+  if(router.rtt3_us !== undefined && router.rtt3_us !== null)
+    sender.intColumn("rtt3_us", router.rtt3_us)
+  if(router.rtt4_us !== undefined && router.rtt4_us !== null)
+    sender.intColumn("rtt4_us", router.rtt4_us)
+  if(router.rtt5_us !== undefined && router.rtt5_us !== null)
+    sender.intColumn("rtt5_us", router.rtt5_us)
+  if(router.loss !== undefined && router.loss !== null)
+    sender.intColumn("loss", router.loss)
+
+  const targetTime = router.timestamp ? router.timestamp.getTime() : Date.now();
+  sender.at(targetTime, "ms");
+}

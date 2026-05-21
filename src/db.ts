@@ -1,4 +1,5 @@
-import { Sequelize } from "sequelize";
+import { Sender } from "@questdb/nodejs-client";
+import Redis from "ioredis";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -11,31 +12,31 @@ function requiredEnv(name: string): string {
   return value;
 }
 
-const PGHOST       = requiredEnv("PGHOST");
-const PGPORT       = Number(requiredEnv("PGPORT"));
-const PGUSER       = requiredEnv("PGUSER");
-const PGPASSWORD   = requiredEnv("PGPASSWORD");
-const PGDATABASE   = requiredEnv("PGDATABASE");
-const PGPOOL_MAX   = Number(requiredEnv("PGPOOL_MAX"));
-const PGPOOL_IDLE  = Number(requiredEnv("PGPOOL_IDLE_MS"));
-const PGPOOL_ACQ   = Number(requiredEnv("PGPOOL_CONN_MS"));
+const QDB_HOST = requiredEnv("QDB_HOST");
+const QDB_PORT = process.env.QDB_PORT || "9000";
+export const QDB_INGESTION_URL = `${QDB_HOST}:${QDB_PORT}`;
 
-export const sequelize = new Sequelize({
-  dialect: "postgres",
-  host: PGHOST,
-  port: PGPORT,
-  username: PGUSER,
-  password: PGPASSWORD,
-  database: PGDATABASE,
-  logging: false,
-  pool: {
-    max: PGPOOL_MAX,
-    min: 0,
-    idle: PGPOOL_IDLE,
-    acquire: PGPOOL_ACQ,
-  },
+export const redis = new Redis({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: parseInt(process.env.REDIS_PORT || '6379', 10),
+  db: 1, // Mantendo o isolamento lógico das filas do BullMQ
 });
 
-export async function shutdownDB() {
-  await sequelize.close();
+// 1. Declaramos o sender que será exportado para os outros arquivos
+export let qdbSender: Sender;
+
+// 2. Criamos a função de inicialização para resolver a Promise do QuestDB
+export async function initQuestDB() {
+  console.log("[QuestDB] Estabelecendo conexão nativa via ILP...");
+  
+  // O await agora está seguro dentro de uma função async
+  qdbSender = await Sender.fromConfig(`http::addr=${QDB_INGESTION_URL}`);
+  
+  console.log("[QuestDB] Sender instanciado com sucesso!");
 }
+
+export async function shutdownDB() {
+  console.log("[QuestDB] Encerrando conexão nativa de ingestão...");
+  await qdbSender.close();
+}
+

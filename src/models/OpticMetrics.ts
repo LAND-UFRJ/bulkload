@@ -1,39 +1,32 @@
-import { DataTypes, Model } from "sequelize";
-import { sequelize } from "../db";
+import { Sender } from "@questdb/nodejs-client";
 
-export class OpticMetric extends Model {
-  declare router_mac: string;
-  declare timestamp: Date;
-  declare bias: number | null;
-  declare rxpower: number | null;
-  declare voltage: number | null;
-  declare txpower: number | null;
-  declare temperature: number | null;
+// Interface pura TypeScript sem amarras de ORM
+export interface IOpticMetric {
+  router_mac: string;
+  timestamp?: Date; // Opcional (se não vier, usa a hora de chegada no banco)
+  bias?: number | null;
+  rxpower?: number | null;
+  voltage?: number | null;
+  txpower?: number | null;
+  temperature?: number | null;
 }
 
-OpticMetric.init(
-  {
-    router_mac: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      primaryKey: true,
-      references: { model: "routers", key: "mac_address" },
-    },
-    timestamp: {
-      type: DataTypes.DATE, // TIMESTAMPTZ
-      allowNull: false,
-      primaryKey: true,
-    },
-    bias: { type: DataTypes.INTEGER, allowNull: true },
-    rxpower: { type: DataTypes.INTEGER, allowNull: true },
-    voltage: { type: DataTypes.INTEGER, allowNull: true },
-    txpower: { type: DataTypes.INTEGER, allowNull: true },
-    temperature: { type: DataTypes.INTEGER, allowNull: true },
-  },
-  {
-    sequelize,
-    tableName: "optical_metrics",
-    schema: "monitoramento",
-    timestamps: false,
-  }
-);
+export function appendOpticMetricToBuffer(sender: Sender, metric: IOpticMetric) {
+  sender.table("optic_metrics")
+    .symbol("router_mac", metric.router_mac);
+
+  if(metric.bias !== undefined && metric.bias !== null)
+    sender.intColumn("bias", metric.bias)
+  if(metric.rxpower !== undefined && metric.rxpower !== null)
+    sender.intColumn("rxpower", metric.rxpower)
+  if(metric.voltage !== undefined && metric.voltage !== null)
+    sender.intColumn("voltage", metric.voltage)
+  if(metric.txpower !== undefined && metric.txpower !== null)
+    sender.intColumn("txpower", metric.txpower)
+  if(metric.temperature !== undefined && metric.temperature !== null)
+    sender.intColumn("temperature", metric.temperature)
+
+  const targetTime = metric.timestamp ? metric.timestamp.getTime() : Date.now();
+  sender.at(targetTime, "ms");
+}
+

@@ -1,11 +1,13 @@
-import { sequelize } from "./db";
-import { Router } from "./models/Router";
-import { Device } from "./models/Device";
-import { DeviceMetric } from "./models/DeviceMetrics";
-import { WanMetric } from "./models/WanMetrics";
-import { LanMetric } from "./models/LanMetrics";
-import { RouterMetric } from "./models/RouterMetrics";
-import { OpticMetric } from "./models/OpticMetrics";
+import { qdbSender } from "./db";
+import { appendRouterToBuffer } from "./models/Router";
+import { appendDeviceToBuffer } from "./models/Device"; 
+import { appendDeviceMetricToBuffer } from "./models/DeviceMetrics";
+import { appendWanMetricToBuffer } from "./models/WanMetrics";
+import { appendLanMetricToBuffer } from "./models/LanMetrics";
+import { appendRouterMetricsToBuffer } from "./models/RouterMetrics";
+import { appendOpticMetricToBuffer } from "./models/OpticMetrics";
+
+// Import das suas funções de extração limpas (assumindo que retornam os objetos mapeados)
 import { getIfaceMetrics } from "./Ingests/IfaceMetrics";
 import { getRouterMetrics } from "./Ingests/RouterMetrics";
 import { getDeviceMetrics } from "./Ingests/DeviceMetrics";
@@ -17,7 +19,7 @@ function epochSecondsToDate(s: string): Date {
   return new Date(n * 1000);
 }
 
-async function upsertMetricsFromReport(report: any) {
+async function buildMetricsBufferFromReport(report: any) {
   const startTime = performance.now();
 
   // TPLink Only for now
@@ -88,38 +90,31 @@ async function upsertMetricsFromReport(report: any) {
     return;
   }
 
-  await sequelize.transaction(async (t) => {
-    await Router.upsert(
-      {
-        mac_address: mac,
-        manufacturer: manufacturer,
-        serialnumber: serialnumber,  // Extract Metrics
-
-        model: ModelName,
-        user_ppp: user_ppp,
-        extractor_type: 0, // bulkdata  
-      },
-      { transaction: t }
-    );
-
-    // Upsert all devices and their metrics
-    for (const device of devices) {
-      await Device.upsert(device, { transaction: t });
-      const deviceMetrics = await getDeviceMetrics(report, device.device_mac, mac, ts, isXX530);
-      if (deviceMetrics) {
-        await DeviceMetric.upsert(deviceMetrics, { transaction: t });
-      }
-    }
-
-    if (wanmetrics)
-      await WanMetric.upsert(wanmetrics, { transaction: t });
-    if (lanmetrics)
-      await LanMetric.upsert(lanmetrics, { transaction: t });
-    if (routermetrics)
-      await RouterMetric.upsert(routermetrics, { transaction: t });
-    if (opticmetrics)
-      await OpticMetric.upsert(opticmetrics, { transaction: t });
+  await appendRouterToBuffer(qdbSender, {
+    router_mac: mac,
+    manufacturer: manufacturer,
+    serialnumber: serialnumber,  
+    model: ModelName,
+    user_ppp: user_ppp,
+    extractor_type: 0, // bulkdata  
   });
+
+  for (const device of devices) {
+    // Processa o cadastro estático do aparelho avaliando pelo Redis
+    await appendDeviceToBuffer(qdbSender, device);
+    
+    // As métricas do aparelho (Time Series) vão direto pro buffer
+    const deviceMetrics = await getDeviceMetrics(report, device.device_mac, mac, ts, isXX530);
+    if (deviceMetrics) {
+      appendDeviceMetricToBuffer(qdbSender, deviceMetrics);
+    }
+  }
+
+  if (wanmetrics)    appendWanMetricToBuffer(qdbSender, wanmetrics);
+  if (lanmetrics)    appendLanMetricToBuffer(qdbSender, lanmetrics);
+  if (routermetrics) appendRouterMetricsToBuffer(qdbSender, routermetrics);
+  if (opticmetrics)  appendOpticMetricToBuffer(qdbSender, opticmetrics);
+
   const endTime = performance.now();
   const duration = (endTime - startTime).toFixed(2);
   //console.log(`Success ${mac} (${serialnumber}) at ${ts.toISOString()} (${duration} ms)`);
@@ -132,8 +127,21 @@ export async function ingest(input: any) {
   if (!input?.Report || !Array.isArray(input.Report)) {
     throw new Error("Ingest: Need Report[] data");
   }
+
+  let relatoriosBufados = 0;
   for (const rep of input.Report) {
-    await upsertMetricsFromReport(rep);
+    await buildMetricsBufferFromReport(rep);
+    relatoriosBufados++;
+  }
+
+  if (relatoriosBufados > 0) {
+    try {
+      await qdbSender.flush();
+      console.log(`[QuestDB Bulk] Ingestão finalizada! ${relatoriosBufados} relatórios BulkData gravados com sucesso.`);
+    } catch (err) {
+      console.error("[QuestDB Error] Falha ao efetuar flush no lote do BulkData:", err);
+      throw err;
+    }
   }
 }
 
