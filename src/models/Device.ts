@@ -17,16 +17,16 @@ export interface IDevice {
 
 export async function appendDeviceToBuffer(sender: Sender, device: IDevice) {
 
-  const currentHash = `${device.router_mac || ""}-${device.host_name || ""}`;
-  let cachedHash = await redis.get(`device:${device.device_mac}`);
+  const currentHash = `${device.host_name || "-"}`;
+  let cachedHash = await redis.get(`device:${device.device_mac}-${device.router_mac}`);
 
   if (cachedHash === null) {
     try {
       const query = encodeURIComponent(
-        `SELECT router_mac, host_name 
+        `SELECT host_name 
          FROM devices
-         LATEST ON timestamp PARTITION BY device_mac 
-         WHERE device_mac = '${device.device_mac}';`
+         WHERE device_mac = '${device.device_mac}' and router_mac = '${device.router_mac}'
+         LATEST ON timestamp PARTITION BY device_mac;`
       );
 
       // Usando o fetch nativo do Node.js (Disponível a partir do Node v18+)
@@ -37,12 +37,12 @@ export async function appendDeviceToBuffer(sender: Sender, device: IDevice) {
         
         // O QuestDB retorna os dados em uma estrutura de arrays (dataset.dataset)
         if (result.dataset && result.dataset.length > 0) {
-          const [router_mac, host_name] = result.dataset[0];
+          const [host_name] = result.dataset[0];
           
           // Reconstruímos a hash do banco de dados e salvamos no Redis para os próximos ciclos
-          cachedHash = `${router_mac || ""}-${host_name || ""}`;
-          await redis.set(`device:${device.device_mac}`, cachedHash);
-          console.log(`[Carga Fria] Estado do MAC ${device.device_mac} recuperado do QuestDB.`);
+          cachedHash = `${host_name || "-"}`;
+          await redis.set(`device:${device.device_mac}-${device.router_mac}`, cachedHash);
+          console.log(`[Carga Fria] Estado do Device ${device.device_mac} recuperado do QuestDB.`);
         }
       }
     } catch (err) {
@@ -56,10 +56,6 @@ export async function appendDeviceToBuffer(sender: Sender, device: IDevice) {
       .symbol("device_mac", device.device_mac)
       .symbol("router_mac", device.router_mac);
 
-    if(device.host_name !== undefined && device.host_name !== null)
-      sender.stringColumn("host_name", device.host_name)
-    if(device.ip_addr !== undefined && device.ip_addr !== null)
-      sender.stringColumn("ip_addr", device.ip_addr)
     if(device.vendor !== undefined && device.vendor !== null)
       sender.symbol("vendor", device.vendor)
     if(device.vendor_class !== undefined && device.vendor_class !== null)
@@ -72,10 +68,14 @@ export async function appendDeviceToBuffer(sender: Sender, device: IDevice) {
       sender.symbol("type", device.type)
     if(device.os !== undefined && device.os !== null)
       sender.symbol("os", device.os)
+    if(device.host_name !== undefined && device.host_name !== null)
+      sender.stringColumn("host_name", device.host_name)
+    if(device.ip_addr !== undefined && device.ip_addr !== null)
+      sender.stringColumn("ip_addr", device.ip_addr)
 
     const targetTime = device.timestamp ? device.timestamp.getTime() : Date.now();
     sender.at(targetTime, "ms");
 
-    await redis.set(`device:${device.device_mac}`, currentHash);
+    await redis.set(`device:${device.device_mac}-${device.router_mac}`, currentHash);
   }
 }

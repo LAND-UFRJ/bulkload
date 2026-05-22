@@ -1,4 +1,4 @@
-import { qdbSender } from "./db";
+import { Sender } from "@questdb/nodejs-client";
 import { appendRouterToBuffer } from "./models/Router";
 import { appendDeviceToBuffer } from "./models/Device"; 
 import { appendDeviceMetricToBuffer } from "./models/DeviceMetrics";
@@ -19,7 +19,7 @@ function epochSecondsToDate(s: string): Date {
   return new Date(n * 1000);
 }
 
-async function buildMetricsBufferFromReport(report: any) {
+async function buildMetricsBufferFromReport(report: any, qdbSender: Sender) {
   const startTime = performance.now();
 
   // TPLink Only for now
@@ -42,8 +42,8 @@ async function buildMetricsBufferFromReport(report: any) {
         dev_ipaddr = host.IPAddress;
 
       devices.push({
-        device_mac: host.PhysAddress,
-        router_mac: mac,
+        device_mac: host.PhysAddress.toLowerCase(),
+        router_mac: mac.toLowerCase(),
         host_name: host.HostName || null,
         ip_addr: dev_ipaddr,
         vendor: null, // Not available in this report structure
@@ -57,19 +57,19 @@ async function buildMetricsBufferFromReport(report: any) {
   // Extract Metrics
   const isXX530 = (ModelName === "XX530vV2" || ModelName === "XX530v") ?  true : false;
   const ifwan = (isXX530)? 5 : 4;
-  const wanmetrics = await getIfaceMetrics(report, ifwan, true, mac, ts);
+  const wanmetrics = await getIfaceMetrics(report, ifwan, true, mac.toLowerCase(), ts);
   if (!wanmetrics) {
     console.warn(`No WAN metrics for MAC ${mac}: ${serialnumber}`);
     showDebug = true;
   }
 
-  const lanmetrics = await getIfaceMetrics(report, 1, false, mac, ts);
+  const lanmetrics = await getIfaceMetrics(report, 1, false, mac.toLowerCase(), ts);
   if (!wanmetrics) {
     console.warn(`No LAN metrics for MAC ${mac}: ${serialnumber}`);
     showDebug = true;
   }
   
-  const routermetrics = await getRouterMetrics(report, mac, ts);
+  const routermetrics = await getRouterMetrics(report, mac.toLowerCase(), ts);
   if (!routermetrics) {
     console.warn(`No Router metrics for MAC ${mac}: ${serialnumber}`);
     showDebug = true;
@@ -77,7 +77,7 @@ async function buildMetricsBufferFromReport(report: any) {
 
   let opticmetrics = null;
   if(isXX530) {
-    opticmetrics = await getOpticMetrics(report, mac, ts);
+    opticmetrics = await getOpticMetrics(report, mac.toLowerCase(), ts);
     if(!opticmetrics)
       showDebug = true;
   }
@@ -91,7 +91,7 @@ async function buildMetricsBufferFromReport(report: any) {
   }
 
   await appendRouterToBuffer(qdbSender, {
-    router_mac: mac,
+    router_mac: mac.toLowerCase(),
     manufacturer: manufacturer,
     serialnumber: serialnumber,  
     model: ModelName,
@@ -104,7 +104,7 @@ async function buildMetricsBufferFromReport(report: any) {
     await appendDeviceToBuffer(qdbSender, device);
     
     // As métricas do aparelho (Time Series) vão direto pro buffer
-    const deviceMetrics = await getDeviceMetrics(report, device.device_mac, mac, ts, isXX530);
+    const deviceMetrics = await getDeviceMetrics(report, device.device_mac, mac.toLowerCase(), ts, isXX530);
     if (deviceMetrics) {
       appendDeviceMetricToBuffer(qdbSender, deviceMetrics);
     }
@@ -123,21 +123,21 @@ async function buildMetricsBufferFromReport(report: any) {
   }
 }
 
-export async function ingest(input: any) {
+export async function ingest(input: any, qdbSender: Sender) {
   if (!input?.Report || !Array.isArray(input.Report)) {
     throw new Error("Ingest: Need Report[] data");
   }
 
   let relatoriosBufados = 0;
   for (const rep of input.Report) {
-    await buildMetricsBufferFromReport(rep);
+    await buildMetricsBufferFromReport(rep, qdbSender);
     relatoriosBufados++;
   }
 
   if (relatoriosBufados > 0) {
     try {
       await qdbSender.flush();
-      console.log(`[QuestDB Bulk] Ingestão finalizada! ${relatoriosBufados} relatórios BulkData gravados com sucesso.`);
+//      console.log(`[QuestDB Bulk] Ingestão finalizada! ${relatoriosBufados} relatórios BulkData gravados com sucesso.`);
     } catch (err) {
       console.error("[QuestDB Error] Falha ao efetuar flush no lote do BulkData:", err);
       throw err;

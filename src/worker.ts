@@ -15,7 +15,7 @@ dotenv.config();
 import { Worker } from 'bullmq';
 import { ingest } from "./ingest";
 import { ingestPing } from "./pingIngest";
-import { shutdownDB, initQuestDB } from "./db";
+import { shutdownDB, createQuestDBSender } from "./db";
 
 const redisConnection = {
   host: process.env.REDIS_HOST || 'localhost',
@@ -23,15 +23,15 @@ const redisConnection = {
 };
 
 async function bootstrap() {
-  await initQuestDB();
+  const qdbSender = await createQuestDBSender();
 
   // ── Bulkdata ingestion worker ──────────────────────────────────────────────
   const ingestionWorker = new Worker('ingestion-queue', async (job) => {
   //  console.log(`[Worker] Processando ingestion job ${job.id}...`);
-    await ingest(job.data);
+    await ingest(job.data, qdbSender);
   }, {
     connection: redisConnection,
-    concurrency: 3, // process up to 3 jobs simultaneously
+    concurrency: 1,
   });
 
   //ingestionWorker.on('completed', (job) =>
@@ -42,12 +42,13 @@ async function bootstrap() {
   );
 
   // ── Ping ingestion worker ──────────────────────────────────────────────────
+  const pingQdbSender = await createQuestDBSender();
   const pingWorker = new Worker('ping-queue', async (job) => {
   //  console.log(`[Worker] Processando ping job ${job.id}...`);
-    await ingestPing(job.data);
+    await ingestPing(job.data, pingQdbSender);
   }, {
     connection: redisConnection,
-    concurrency: 3,
+    concurrency: 1,
   });
 
   pingWorker.on('completed', (job) =>
@@ -64,7 +65,8 @@ async function bootstrap() {
     console.log('[Worker] Shutting down...');
     await ingestionWorker.close();
     await pingWorker.close();
-    await shutdownDB();
+    await shutdownDB(qdbSender);
+    await shutdownDB(pingQdbSender);
     process.exit(0);
   }
 

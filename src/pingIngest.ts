@@ -1,4 +1,4 @@
-import { qdbSender } from "./db";
+import { Sender } from "@questdb/nodejs-client";
 import { appendRouterToBuffer } from "./models/Router"
 import { appendPingToBuffer } from "./models/PingMetrics";
 
@@ -8,7 +8,7 @@ function epochSecondsToDate(s: any): Date {
   return new Date(n * 1000);
 }
 
-export async function ingestPing(input: any) {
+export async function ingestPing(input: any, qdbSender: Sender) {
   if (!input || typeof input !== 'object') {
     throw new Error("IngestPing: Need valid JSON object");
   }

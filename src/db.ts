@@ -22,21 +22,13 @@ export const redis = new Redis({
   db: 1, // Mantendo o isolamento lógico das filas do BullMQ
 });
 
-// 1. Declaramos o sender que será exportado para os outros arquivos
-export let qdbSender: Sender;
-
-// 2. Criamos a função de inicialização para resolver a Promise do QuestDB
-export async function initQuestDB() {
-  console.log("[QuestDB] Estabelecendo conexão nativa via ILP...");
-  
-  // O await agora está seguro dentro de uma função async
-  qdbSender = await Sender.fromConfig(`http::addr=${QDB_INGESTION_URL}`);
-  
-  console.log("[QuestDB] Sender instanciado com sucesso!");
+export async function createQuestDBSender(): Promise<Sender> {
+  // Retorna a instância síncrona resolvida do Sender por Worker [cite: 354, 355]
+  return await Sender.fromConfig(`http::addr=${QDB_INGESTION_URL}`);
 }
 
-export async function shutdownDB() {
+export async function shutdownDB(sender: Sender) {
   console.log("[QuestDB] Encerrando conexão nativa de ingestão...");
-  await qdbSender.close();
+  await sender.close();
 }
 

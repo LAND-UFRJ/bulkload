@@ -29,9 +29,9 @@ export async function appendRouterToBuffer(sender: Sender, router: IRouter) {
     try {
       const query = encodeURIComponent(
         `SELECT user_ppp, extractor_type 
-         FROM routers 
-         LATEST ON timestamp PARTITION BY router_mac 
-         WHERE router_mac = '${router.router_mac}';`
+         FROM routers  
+         WHERE router_mac = '${router.router_mac}'
+         LATEST ON timestamp PARTITION BY router_mac;`
       );
 
       // Usando o fetch nativo do Node.js (Disponível a partir do Node v18+)
@@ -59,24 +59,25 @@ export async function appendRouterToBuffer(sender: Sender, router: IRouter) {
   if (cachedHash !== currentHash) {
     sender.table("routers")
       .symbol("router_mac", router.router_mac)
-      .intColumn("extractor_type", router.extractor_type)
 
     if(router.manufacturer !== undefined && router.manufacturer !== null)
       sender.symbol("manufacturer", router.manufacturer)
-    if(router.serialnumber !== undefined && router.serialnumber !== null)
-      sender.stringColumn("serialnumber", router.serialnumber)
     if(router.isp !== undefined && router.isp !== null)
       sender.symbol("isp", router.isp)
     if(router.model !== undefined && router.model !== null)
       sender.symbol("model", router.model)
     if(router.user_ppp !== undefined && router.user_ppp !== null)
       sender.symbol("user_ppp", router.user_ppp)
-    if(router.location !== undefined && router.location !== null)
-      sender.stringColumn("location", router.location)
     if(router.city !== undefined && router.city !== null)
       sender.symbol("city", router.city)
     if(router.state !== undefined && router.state !== null)
       sender.symbol("state", router.state)
+
+    sender.intColumn("extractor_type", router.extractor_type)
+    if(router.serialnumber !== undefined && router.serialnumber !== null)
+      sender.stringColumn("serialnumber", router.serialnumber)
+    if(router.location !== undefined && router.location !== null)
+      sender.stringColumn("location", router.location)
     if(router.latitude !== undefined && router.latitude !== null)
       sender.floatColumn("latitude", router.latitude)
     if(router.longitude !== undefined && router.longitude !== null)
