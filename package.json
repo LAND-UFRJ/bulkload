@@ -9,6 +9,8 @@
     "serve": "pm2 start build/src/server.js --name bulkload -i max",
     "worker": "ts-node src/worker.ts",
     "serve:worker": "pm2 start build/src/worker.js --name bulkload-worker -i max",
+    "monitor": "ts-node src/monitor.ts",
+    "serve:monitor": "pm2 start build/src/monitor.js --name bulkload-monitor",
     "logs": "pm2 logs bulkload",
     "geolocation": "ts-node scripts/geolocationIngest.ts"
   },
